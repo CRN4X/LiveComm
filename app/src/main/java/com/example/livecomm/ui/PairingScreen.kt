@@ -1,0 +1,48 @@
+package com.example.livecomm.ui
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun PairingScreen(role: String, onPaired: (String) -> Unit) {
+    var code by remember { mutableStateOf("") }
+    var deviceName by remember { mutableStateOf("") }
+    var paired by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Enter Pairing Code:")
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = code,
+            onValueChange = { code = it },
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = {
+                // TODO: Add real pairing logic here
+                paired = true
+                deviceName = if (role == "tx") "Receiver Device" else "Transmitter Device"
+                onPaired(deviceName)
+            },
+            enabled = code.isNotBlank()
+        ) {
+            Text("Pair")
+        }
+        if (paired) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Pairing successful with $deviceName!")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Ensure both devices are on the same WiFi network.")
+    }
+}
+
