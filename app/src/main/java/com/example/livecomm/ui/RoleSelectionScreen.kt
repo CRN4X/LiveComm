@@ -5,15 +5,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
 
 @Composable
-fun RoleSelectionScreen(onRoleSelected: (String) -> Unit) {
+fun RoleSelectionScreen(userName: String, onRoleSelected: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(32.dp),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
+        Text(
+            text = "Welcome $userName!!",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.align(Alignment.Start)
+        )
+        Spacer(modifier = Modifier.height(32.dp))
         Text("Select your role:")
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = { onRoleSelected("tx") }, modifier = Modifier.fillMaxWidth()) {
@@ -25,4 +32,3 @@ fun RoleSelectionScreen(onRoleSelected: (String) -> Unit) {
         }
     }
 }
-

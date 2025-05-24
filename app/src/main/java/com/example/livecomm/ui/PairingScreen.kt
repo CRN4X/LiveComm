@@ -5,9 +5,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
 
 @Composable
-fun PairingScreen(role: String, onPaired: (String) -> Unit) {
+fun PairingScreen(userName: String, role: String, onPaired: (String) -> Unit) {
     var code by remember { mutableStateOf("") }
     var deviceName by remember { mutableStateOf("") }
     var paired by remember { mutableStateOf(false) }
@@ -16,8 +17,14 @@ fun PairingScreen(role: String, onPaired: (String) -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .padding(32.dp),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
+        Text(
+            text = "Welcome $userName!!",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.align(Alignment.Start)
+        )
+        Spacer(modifier = Modifier.height(32.dp))
         Text("Enter Pairing Code:")
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
@@ -45,4 +52,3 @@ fun PairingScreen(role: String, onPaired: (String) -> Unit) {
         Text("Ensure both devices are on the same WiFi network.")
     }
 }
-
