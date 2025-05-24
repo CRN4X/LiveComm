@@ -8,6 +8,8 @@ import androidx.lifecycle.lifecycleScope
 import com.example.livecomm.model.AppState
 import com.example.livecomm.ui.*
 import kotlinx.coroutines.launch //import com.example.livecomm.UserPreferences
+import java.net.NetworkInterface
+import java.net.Inet4Address
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,6 +17,8 @@ class MainActivity : ComponentActivity() {
 
     var initialScreen = "onboarding"
     var savedName: String? = null
+
+    val localIp = getLocalIpAddress() ?: "0.0.0.0"
 
     // Check for saved name synchronously before Compose starts
     lifecycleScope.launch {
@@ -59,6 +63,8 @@ class MainActivity : ComponentActivity() {
                     )
 
                     "tx" -> TxScreen(
+                        ip = "12343434",
+                        port = 4444,
                         userName = appState.userName, // Pass the name
                         pairedDeviceName = appState.pairedDeviceName,
                         onClose = { finish() }
@@ -73,4 +79,17 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+fun getLocalIpAddress(): String? {
+    val interfaces = NetworkInterface.getNetworkInterfaces()
+    for (intf in interfaces) {
+        val addrs = intf.inetAddresses
+        for (addr in addrs) {
+            if (!addr.isLoopbackAddress && addr is Inet4Address) {
+                return addr.hostAddress
+            }
+        }
+    }
+    return null
 }

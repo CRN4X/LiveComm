@@ -25,7 +25,7 @@ fun PairingScreen(userName: String, role: String, onPaired: (String) -> Unit) {
             modifier = Modifier.align(Alignment.Start)
         )
         Spacer(modifier = Modifier.height(32.dp))
-        Text("Enter Pairing Code:")
+        Text("Enter Security Code:")
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = code,
