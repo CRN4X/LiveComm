@@ -47,20 +47,20 @@ class MainActivity : ComponentActivity() {
                     "role" -> RoleSelectionScreen(
                         userName = appState.userName, // Pass the name
                         onRoleSelected = { role ->
-                            appState = appState.copy(role = role, screen = "pairing")
+                            appState = appState.copy(role = role, screen = if (role == "tx") "tx" else "rx")
                         }
                     )
 
-                    "pairing" -> PairingScreen(
-                        userName = appState.userName, // Pass the name
-                        role = appState.role,
-                        onPaired = { deviceName ->
-                            appState = appState.copy(
-                                pairedDeviceName = deviceName,
-                                screen = if (appState.role == "tx") "tx" else "rx"
-                            )
-                        }
-                    )
+//                    "pairing" -> PairingScreen(
+//                        userName = appState.userName, // Pass the name
+//                        role = appState.role,
+//                        onPaired = { deviceName ->
+//                            appState = appState.copy(
+//                                pairedDeviceName = deviceName,
+//                                screen = if (appState.role == "tx") "tx" else "rx"
+//                            )
+//                        }
+//                    )
 
                     "tx" -> TxScreen(
                         ip = "12343434",
