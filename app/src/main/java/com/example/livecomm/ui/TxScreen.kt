@@ -1,5 +1,6 @@
 package com.example.livecomm.ui
 
+import android.view.Display
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -8,19 +9,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
+// import androidx.compose.ui.platform.LocalContext
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.BarcodeEncoder
+import androidx.activity.compose.BackHandler
+import java.net.ServerSocket
+import java.net.Socket
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
 @Composable
 fun TxScreen(
     ip: String,
     port: Int,
     userName: String,
+    onBack: () -> Unit,
     pairedDeviceName: String,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onConnected: (String) -> Unit
 ) {
-    val context = LocalContext.current
+    BackHandler {
+        onBack()
+    }
+
+    // val context = LocalContext.current
     val qrContent = "$ip:$port" // Or use JSON for more info
     val qrBitmap = remember(qrContent) {
         try {
@@ -32,6 +44,54 @@ fun TxScreen(
     }
 
     var streaming by remember { mutableStateOf(false) }
+
+    var connectionStatus by remember { mutableStateOf("Waiting for receiver...") }
+    // val coroutineScope = rememberCoroutineScope()
+
+    // Server socket state
+    var serverSocket by remember { mutableStateOf<ServerSocket?>(null) }
+    var clientSocket by remember { mutableStateOf<Socket?>(null) }
+
+    // Start server when streaming starts
+    LaunchedEffect(streaming) {
+        if (streaming) {
+            withContext(Dispatchers.IO) {
+                try {
+                    val server = ServerSocket(port)
+                    serverSocket = server
+                    val client = server.accept()
+                    clientSocket = client
+
+                    // Send your user name
+                    client.getOutputStream().write((userName + "\n").toByteArray())
+                    client.getOutputStream().flush()
+
+                    // Read the other device's user name
+                    val otherDeviceName = client.getInputStream().bufferedReader().readLine()
+
+                    withContext(Dispatchers.Main) {
+                        connectionStatus = "Receiver connected!"
+                        onConnected(otherDeviceName)
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        connectionStatus = "Error: ${e.message}"
+                    }
+                    // Print to Logcat for debugging
+                    println("Rx connection error: ${e.message}")
+                    // Android Log:
+                    // Log.e("RxScreen", "Connection error", e)
+                }
+            }
+        } else {
+            // Clean up sockets
+            clientSocket?.close()
+            serverSocket?.close()
+            clientSocket = null
+            serverSocket = null
+            connectionStatus = "Waiting for receiver..."
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -46,8 +106,10 @@ fun TxScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text("Connected to device: $pairedDeviceName")
+
         Spacer(modifier = Modifier.height(16.dp))
         Text("Scan this QR code on the receiver device to connect:")
+
         Spacer(modifier = Modifier.height(8.dp))
         qrBitmap?.let {
             Image(
@@ -58,6 +120,10 @@ fun TxScreen(
                     .align(Alignment.CenterHorizontally)
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Status: $connectionStatus")
+
         Spacer(modifier = Modifier.height(24.dp))
         if (!streaming) {
             Button(onClick = { streaming = true }, modifier = Modifier.fillMaxWidth()) {

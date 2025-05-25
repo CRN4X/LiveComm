@@ -9,10 +9,24 @@ import androidx.compose.ui.Alignment
 import com.journeyapps.barcodescanner.ScanOptions
 import com.journeyapps.barcodescanner.ScanContract
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.Socket
 
 @Composable
-fun RxScreen(userName: String, pairedDeviceName: String, onClose: () -> Unit) {
+fun RxScreen(
+    userName: String,
+    onBack: () -> Unit,
+    pairedDeviceName: String,
+    onClose: () -> Unit,
+    onConnected: (String) -> Unit
+) {
+    BackHandler { onBack() }
+
     var listening by remember { mutableStateOf(false) }
+    var connectionStatus by remember { mutableStateOf("Not connected") }
+    var socket by remember { mutableStateOf<Socket?>(null) }
     var scannedIp by remember { mutableStateOf<String?>(null) }
     var scannedPort by remember { mutableStateOf<String?>(null) }
 
@@ -23,6 +37,42 @@ fun RxScreen(userName: String, pairedDeviceName: String, onClose: () -> Unit) {
                 scannedIp = parts[0]
                 scannedPort = parts[1]
             }
+        }
+    }
+
+    // Connect to Tx when listening starts and IP/port are available
+    LaunchedEffect(listening, scannedIp, scannedPort) {
+        if (listening && scannedIp != null && scannedPort != null) {
+            try {
+                val client = Socket(scannedIp, scannedPort!!.toInt())
+                socket = client
+
+                // Send your user name
+                client.getOutputStream().write((userName + "\n").toByteArray())
+                client.getOutputStream().flush()
+
+                // Read the other device's user name
+                val otherDeviceName = client.getInputStream().bufferedReader().readLine()
+
+                withContext(Dispatchers.Main) {
+                    connectionStatus = "Transmitter connected!"
+                    onConnected(otherDeviceName)
+                }
+                // Now you can use client.getInputStream()/getOutputStream() for signaling
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    connectionStatus = "Error: ${e.message}"
+                }
+                // Print to Logcat for debugging
+                println("Rx connection error: ${e.message}")
+                // Android Log:
+                // Log.e("RxScreen", "Connection error", e)
+            }
+        } else {
+            // Clean up socket
+            socket?.close()
+            socket = null
+            connectionStatus = "Not connected"
         }
     }
 
@@ -42,7 +92,11 @@ fun RxScreen(userName: String, pairedDeviceName: String, onClose: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { scanLauncher.launch(ScanOptions()) },
+            onClick = {
+                val options = ScanOptions()
+                options.setOrientationLocked(true)
+                scanLauncher.launch(options)
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Scan QR Code")
@@ -79,3 +133,4 @@ fun RxScreen(userName: String, pairedDeviceName: String, onClose: () -> Unit) {
         }
     }
 }
+

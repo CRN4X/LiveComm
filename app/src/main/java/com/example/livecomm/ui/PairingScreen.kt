@@ -48,7 +48,7 @@ fun PairingScreen(userName: String, role: String, onPaired: (String) -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
             Text("Pairing successful with $deviceName!")
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(530.dp))
         Text("Ensure both devices are on the same WiFi network.")
     }
 }

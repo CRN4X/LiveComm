@@ -4,6 +4,6 @@ data class AppState(
     val screen: String = "onboarding",
     val userName: String = "",
     val role: String = "",
-    val pairedDeviceName: String = ""
+    val pairedDeviceName: String = "",
+    val otherDeviceName: String = ""
 )
-

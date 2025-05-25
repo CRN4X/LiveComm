@@ -6,9 +6,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.activity.compose.BackHandler
 
 @Composable
-fun RoleSelectionScreen(userName: String, onRoleSelected: (String) -> Unit) {
+fun RoleSelectionScreen(userName: String, onBack: () -> Unit, onRoleSelected: (String) -> Unit, onClose: () -> Unit) {
+    BackHandler {
+        onBack()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -29,6 +34,10 @@ fun RoleSelectionScreen(userName: String, onRoleSelected: (String) -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = { onRoleSelected("rx") }, modifier = Modifier.fillMaxWidth()) {
             Text("Receiver (Rx)")
+        }
+        Spacer(modifier = Modifier.height(530.dp))
+        Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
+            Text("Close App")
         }
     }
 }
