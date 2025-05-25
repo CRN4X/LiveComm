@@ -1,6 +1,6 @@
 package com.example.livecomm.ui
 
-import android.view.Display
+//import android.view.Display
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -17,6 +17,10 @@ import java.net.ServerSocket
 import java.net.Socket
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+//import android.util.Log
+import timber.log.Timber
+import kotlinx.coroutines.launch
+import java.net.InetSocketAddress
 
 @Composable
 fun TxScreen(
@@ -24,7 +28,6 @@ fun TxScreen(
     port: Int,
     userName: String,
     onBack: () -> Unit,
-    pairedDeviceName: String,
     onClose: () -> Unit,
     onConnected: (String) -> Unit
 ) {
@@ -32,64 +35,112 @@ fun TxScreen(
         onBack()
     }
 
-    // val context = LocalContext.current
-    val qrContent = "$ip:$port" // Or use JSON for more info
+    val qrContent = "$ip:$port"
     val qrBitmap = remember(qrContent) {
         try {
             val barcodeEncoder = BarcodeEncoder()
             barcodeEncoder.encodeBitmap(qrContent, BarcodeFormat.QR_CODE, 400, 400)
         } catch (e: Exception) {
+            Timber.tag("TxScreen").d(e, "Failed to generate QR code")
             null
         }
     }
 
     var streaming by remember { mutableStateOf(false) }
-
     var connectionStatus by remember { mutableStateOf("Waiting for receiver...") }
-    // val coroutineScope = rememberCoroutineScope()
+    var serverError by remember { mutableStateOf<String?>(null) }
 
     // Server socket state
     var serverSocket by remember { mutableStateOf<ServerSocket?>(null) }
     var clientSocket by remember { mutableStateOf<Socket?>(null) }
 
+    val coroutineScope = rememberCoroutineScope()
+
     // Start server when streaming starts
     LaunchedEffect(streaming) {
+        Timber.tag("TxScreen").e("Streaming state changed: $streaming")
+
         if (streaming) {
-            withContext(Dispatchers.IO) {
+            coroutineScope.launch(Dispatchers.IO) {
                 try {
-                    val server = ServerSocket(port)
+                    Timber.tag("TxScreen").d("Creating server socket on port $port")
+
+                    // Close any existing server socket
+                    serverSocket?.close()
+
+                    // Create new server socket
+                    val server = ServerSocket()
+                    server.reuseAddress = true
+                    server.bind(InetSocketAddress(port))
                     serverSocket = server
+
+                    Timber.tag("TxScreen").d("Server socket created and bound to port $port")
+                    withContext(Dispatchers.Main) {
+                        connectionStatus = "Waiting for the connection...." //"Listening on port $port..."
+                        serverError = null
+                    }
+
+                    Timber.tag("TxScreen").d("Waiting for client connection...")
                     val client = server.accept()
                     clientSocket = client
+
+                    Timber.tag("TxScreen")
+                        .d("Client connected from ${client.inetAddress.hostAddress}")
 
                     // Send your user name
                     client.getOutputStream().write((userName + "\n").toByteArray())
                     client.getOutputStream().flush()
 
+                    Timber.tag("TxScreen").d("Sent username: $userName")
+
                     // Read the other device's user name
                     val otherDeviceName = client.getInputStream().bufferedReader().readLine()
+                    Timber.tag("TxScreen").d("Received other device name: $otherDeviceName")
 
                     withContext(Dispatchers.Main) {
                         connectionStatus = "Receiver connected!"
                         onConnected(otherDeviceName)
                     }
                 } catch (e: Exception) {
+                    Timber.tag("TxScreen").e(e, "Server error")
                     withContext(Dispatchers.Main) {
-                        connectionStatus = "Error: ${e.message}"
+                        connectionStatus = "Error: Connection failed"
+                        serverError = e.message
+                        streaming = false // Reset streaming state on error
                     }
-                    // Print to Logcat for debugging
-                    println("Rx connection error: ${e.message}")
-                    // Android Log:
-                    // Log.e("RxScreen", "Connection error", e)
                 }
             }
         } else {
             // Clean up sockets
-            clientSocket?.close()
-            serverSocket?.close()
-            clientSocket = null
-            serverSocket = null
-            connectionStatus = "Waiting for receiver..."
+            coroutineScope.launch(Dispatchers.IO) {
+                try {
+                    Timber.tag("TxScreen").d("Closing sockets")
+                    clientSocket?.close()
+                    serverSocket?.close()
+                } catch (e: Exception) {
+                    Timber.tag("TxScreen").e(e, "Error closing sockets")
+                }
+                clientSocket = null
+                serverSocket = null
+
+                withContext(Dispatchers.Main) {
+                    connectionStatus = "Waiting for receiver..."
+                }
+            }
+        }
+    }
+
+    // Clean up when component is removed
+    DisposableEffect(Unit) {
+        onDispose {
+            coroutineScope.launch(Dispatchers.IO) {
+                try {
+                    clientSocket?.close()
+                    serverSocket?.close()
+                } catch (e: Exception) {
+                    Timber.tag("TxScreen").e(e, "Error closing sockets on dispose")
+                }
+            }
         }
     }
 
@@ -104,10 +155,15 @@ fun TxScreen(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.align(Alignment.Start)
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Connected to device: $pairedDeviceName")
 
-        Spacer(modifier = Modifier.height(16.dp))
+//        Spacer(modifier = Modifier.height(16.dp))
+//        Text("Connected to device: $pairedDeviceName")
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//        Text("Your IP address: $ip")
+//        Text("Port: $port")
+
+        Spacer(modifier = Modifier.height(8.dp))
         Text("Scan this QR code on the receiver device to connect:")
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -122,21 +178,39 @@ fun TxScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
         Text("Status: $connectionStatus")
 
+        serverError?.let {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Error: $it",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
+
         if (!streaming) {
-            Button(onClick = { streaming = true }, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = { streaming = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Start Tx")
             }
         } else {
-            Text("VIDEO STREAMING...")
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { streaming = false }, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = { streaming = false },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("STOP")
             }
         }
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
             Text("Close App")
         }

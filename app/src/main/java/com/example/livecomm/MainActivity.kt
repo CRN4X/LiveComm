@@ -9,7 +9,7 @@ import com.example.livecomm.ui.*
 import kotlinx.coroutines.launch //import com.example.livecomm.UserPreferences
 import java.net.NetworkInterface
 import java.net.Inet4Address
-import androidx.compose.foundation.layout.*
+//import androidx.compose.foundation.layout.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,15 +58,14 @@ class MainActivity : ComponentActivity() {
                     )
                     "tx" -> TxScreen(
                         ip = localIp,
-                        port = 4444,
+                        port = appState.defaultPort,
                         userName = appState.userName,
                         onBack = { appState = appState.copy(screen = "role") },
-                        pairedDeviceName = appState.pairedDeviceName,
                         onClose = { finish() },
                         onConnected = { otherDeviceName ->
                             appState = appState.copy(
                                 screen = "connected",
-                                otherDeviceName = otherDeviceName
+                                otherDeviceName = otherDeviceName,
                             )
                         }
                     )
@@ -84,6 +83,7 @@ class MainActivity : ComponentActivity() {
                     )
                     "connected" -> ConnectedScreen(
                         userName = appState.userName,
+                        onBack = {appState = appState.copy(screen = "role")},
                         otherDeviceName = appState.otherDeviceName,
                         onClose = { finish() }
                     )

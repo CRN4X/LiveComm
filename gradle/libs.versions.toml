@@ -26,7 +26,9 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version = "1.1.7" }
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version = "4.3.0" }
-
+zxing-core = { group = "com.google.zxing", name = "core", version = "3.5.1" }
+timber = { group = "com.jakewharton.timber", name = "timber", version = "5.0.1" }
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version = "1.7.3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

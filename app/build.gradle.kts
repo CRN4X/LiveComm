@@ -37,10 +37,25 @@ android {
     buildFeatures {
         compose = true
     }
+    
+    // Optional: Add this if needed for ZXing compatibility
+    packagingOptions {
+        resources {
+            excludes += listOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/notice.txt",
+                "META-INF/ASL2.0"
+            )
+        }
+    }
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -50,6 +65,16 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.datastore.preferences)
+    implementation(libs.timber) 
+    
+    // ZXing dependencies
+    implementation(libs.zxing.android.embedded)
+    implementation(libs.zxing.core)
+    
+    // Coroutines for better async handling
+    implementation(libs.kotlinx.coroutines.android)
+    
+    // Testing dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -57,5 +82,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation(libs.zxing.android.embedded)
 }

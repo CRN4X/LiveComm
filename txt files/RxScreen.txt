@@ -1,0 +1,144 @@
+package com.example.livecomm.ui
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import com.journeyapps.barcodescanner.ScanOptions
+import com.journeyapps.barcodescanner.ScanContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.Socket
+
+@Composable
+fun RxScreen(
+    userName: String,
+    onBack: () -> Unit,
+    pairedDeviceName: String,
+    onClose: () -> Unit,
+    onConnected: (String) -> Unit
+) {
+    BackHandler { onBack() }
+
+    var listening by remember { mutableStateOf(false) }
+    var connectionStatus by remember { mutableStateOf("Not connected") }
+    var socket by remember { mutableStateOf<Socket?>(null) }
+    var scannedIp by remember { mutableStateOf<String?>(null) }
+    var scannedPort by remember { mutableStateOf<String?>(null) }
+
+    val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+        if (result.contents != null) {
+            val parts = result.contents.split(":")
+            if (parts.size == 2) {
+                scannedIp = parts[0]
+                scannedPort = parts[1]
+            }
+        }
+    }
+
+    // Connect to Tx when listening starts and IP/port are available
+    LaunchedEffect(listening, scannedIp, scannedPort) {
+        // Print to Logcat for debugging
+        println("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR111111111111111111111111111111111111111111111111")
+        if (listening && scannedIp != null && scannedPort != null) {
+            println("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR222222222222222222222222222222222222222222222")
+            try {
+                println("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR33333333333333333333333333333333333333333333333333")
+                val client = Socket(scannedIp, scannedPort!!.toInt())
+                socket = client
+
+                println("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR4444444444444444444444444444444444444444444444444444")
+
+                // Send your user name
+                client.getOutputStream().write((userName + "\n").toByteArray())
+                client.getOutputStream().flush()
+
+                println("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR555555555555555555555555555555555555555555555555555555555")
+
+                // Read the other device's user name
+                val otherDeviceName = client.getInputStream().bufferedReader().readLine()
+
+                withContext(Dispatchers.Main) {
+                    connectionStatus = "Transmitter connected!"
+                    onConnected(otherDeviceName)
+                }
+                // Now you can use client.getInputStream()/getOutputStream() for signaling
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    connectionStatus = "Error: ${e.message}"
+                }
+                // Print to Logcat for debugging
+                println("Rx connection error: ${e.message}")
+                // Android Log:
+                // Log.e("RxScreen", "Connection error", e)
+            }
+        } else {
+            // Clean up socket
+            socket?.close()
+            socket = null
+            connectionStatus = "Not connected"
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Top
+    ) {
+        Text(
+            text = "Welcome $userName!!",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.align(Alignment.Start)
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+        Text("Connected to device: $pairedDeviceName")
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                val options = ScanOptions()
+                options.setOrientationLocked(true)
+                scanLauncher.launch(options)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Scan QR Code")
+        }
+
+        if (scannedIp != null && scannedPort != null) {
+            Text("Scanned IP: $scannedIp, Port: $scannedPort")
+            Spacer(modifier = Modifier.height(16.dp))
+            if (!listening) {
+                Button(
+                    onClick = { listening = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Start Listening")
+                }
+            } else {
+                Text("PLAYING VIDEO...")
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { listening = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("STOP")
+                }
+            }
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Please scan a QR code to get IP and port.")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
+            Text("Close App")
+        }
+    }
+}
+

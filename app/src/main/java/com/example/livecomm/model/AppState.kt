@@ -5,5 +5,6 @@ data class AppState(
     val userName: String = "",
     val role: String = "",
     val pairedDeviceName: String = "",
-    val otherDeviceName: String = ""
+    val otherDeviceName: String = "",
+    val defaultPort: Int = 4444
 )
