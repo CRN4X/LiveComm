@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
 //                    )
 
                     "tx" -> TxScreen(
-                        ip = "12343434",
+                        ip = localIp,
                         port = 4444,
                         userName = appState.userName, // Pass the name
                         pairedDeviceName = appState.pairedDeviceName,
