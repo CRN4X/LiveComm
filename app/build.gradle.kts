@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.Packaging
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -39,7 +41,7 @@ android {
     }
     
     // Optional: Add this if needed for ZXing compatibility
-    packagingOptions {
+    fun Packaging.() {
         resources {
             excludes += listOf(
                 "META-INF/DEPENDENCIES",
@@ -65,7 +67,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.datastore.preferences)
-    implementation(libs.timber) 
+    implementation(libs.timber)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     
     // ZXing dependencies
     implementation(libs.zxing.android.embedded)
@@ -82,4 +85,14 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // CameraX
+    implementation(libs.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
+
+    // Video compression and encoding
+    implementation(libs.light.compressor)
+
 }

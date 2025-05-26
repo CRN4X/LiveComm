@@ -16,6 +16,9 @@ import kotlinx.coroutines.withContext
 import java.net.Socket
 import java.net.InetSocketAddress
 import kotlinx.coroutines.launch
+//import com.example.livecomm.model.AppState
+import com.example.livecomm.viewmodel.SocketViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun RxScreen(
@@ -23,7 +26,8 @@ fun RxScreen(
     onBack: () -> Unit,
     pairedDeviceName: String,
     onClose: () -> Unit,
-    onConnected: (String) -> Unit
+    onConnected: (String) -> Unit,
+    socketViewModel: SocketViewModel = viewModel()
 ) {
     BackHandler { onBack() }
 
@@ -63,11 +67,12 @@ fun RxScreen(
                         Timber.tag("RxScreen").d("Attempting to connect to $scannedIp:$scannedPort")
 
                         // Create socket with timeout
-                        val newSocket = Socket()
+                        val newSocket = Socket()  // AppState.socket //
                         newSocket.connect(InetSocketAddress(scannedIp, scannedPort!!.toInt()), 5000) // 5 second timeout
                         socket = newSocket
 
                         Timber.tag("RxScreen").d("Socket connected successfully")
+                        socketViewModel.socket = socket
 
                         // Send your user name
                         newSocket.getOutputStream().write((userName + "\n").toByteArray())
@@ -107,11 +112,11 @@ fun RxScreen(
             // Clean up socket
             withContext(Dispatchers.IO) {
                 try {
-                    socket?.close()
+                    //socket?.close()
                 } catch (e: Exception) {
                     Timber.tag("RxScreen").e(e, "Error closing socket")
                 }
-                socket = null
+                //socket = null
             }
             connectionStatus = "Not connected"
         }

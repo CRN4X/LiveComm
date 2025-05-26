@@ -21,6 +21,8 @@ import kotlinx.coroutines.Dispatchers
 import timber.log.Timber
 import kotlinx.coroutines.launch
 import java.net.InetSocketAddress
+import com.example.livecomm.viewmodel.SocketViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun TxScreen(
@@ -29,7 +31,8 @@ fun TxScreen(
     userName: String,
     onBack: () -> Unit,
     onClose: () -> Unit,
-    onConnected: (String) -> Unit
+    onConnected: (String) -> Unit,
+    socketViewModel: SocketViewModel = viewModel()
 ) {
     BackHandler {
         onBack()
@@ -74,6 +77,8 @@ fun TxScreen(
                     server.bind(InetSocketAddress(port))
                     serverSocket = server
 
+                    socketViewModel.serverSocket = serverSocket
+
                     Timber.tag("TxScreen").d("Server socket created and bound to port $port")
                     withContext(Dispatchers.Main) {
                         connectionStatus = "Waiting for the connection...." //"Listening on port $port..."
@@ -83,6 +88,8 @@ fun TxScreen(
                     Timber.tag("TxScreen").d("Waiting for client connection...")
                     val client = server.accept()
                     clientSocket = client
+
+                    socketViewModel.clientSocket = clientSocket
 
                     Timber.tag("TxScreen")
                         .d("Client connected from ${client.inetAddress.hostAddress}")

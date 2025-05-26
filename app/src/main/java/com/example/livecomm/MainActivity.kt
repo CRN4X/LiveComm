@@ -10,8 +10,11 @@ import kotlinx.coroutines.launch //import com.example.livecomm.UserPreferences
 import java.net.NetworkInterface
 import java.net.Inet4Address
 //import androidx.compose.foundation.layout.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.livecomm.viewmodel.SocketViewModel
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -21,6 +24,8 @@ class MainActivity : ComponentActivity() {
             var appState by remember { mutableStateOf(AppState()) }
             var isNameLoaded by remember { mutableStateOf(false) }
             val coroutineScope = rememberCoroutineScope()
+
+            val socketViewModel: SocketViewModel = viewModel()
 
             // Load saved name from DataStore when the app starts
             LaunchedEffect(Unit) {
@@ -64,7 +69,7 @@ class MainActivity : ComponentActivity() {
                         onClose = { finish() },
                         onConnected = { otherDeviceName ->
                             appState = appState.copy(
-                                screen = "connected",
+                                screen = "connectedTx",
                                 otherDeviceName = otherDeviceName,
                             )
                         }
@@ -76,16 +81,25 @@ class MainActivity : ComponentActivity() {
                         onClose = { finish() },
                         onConnected = { otherDeviceName ->
                             appState = appState.copy(
-                                screen = "connected",
+                                screen = "connectedRx",
                                 otherDeviceName = otherDeviceName
                             )
                         }
                     )
-                    "connected" -> ConnectedScreen(
+                    "connectedTx" -> ConnectedTxScreen(
+                    userName = appState.userName,
+                    otherDeviceName = appState.otherDeviceName,
+                    onBack = { appState = appState.copy(screen = appState.role) },
+                    onClose = { finish() },
+                    socket = socketViewModel.clientSocket
+                    )
+
+                    "connectedRx" -> ConnectedRxScreen(
                         userName = appState.userName,
-                        onBack = {appState = appState.copy(screen = "role")},
                         otherDeviceName = appState.otherDeviceName,
-                        onClose = { finish() }
+                        onBack = { appState = appState.copy(screen = appState.role) },
+                        onClose = { finish() },
+                        socket = socketViewModel.socket
                     )
                 }
             }
